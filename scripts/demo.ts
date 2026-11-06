@@ -46,7 +46,7 @@ const U64_MAX = 2n ** 64n - 1n;
 export async function runDualLaneDemo() {
   const cfg = loadConfig();
   console.log(`\n========================================================`);
-  console.log(`  PORTUSMAX DUAL-LANE INTERACTION DEMO`);
+  console.log(`  SOLCROSS DUAL-LANE INTERACTION DEMO`);
   console.log(`  Target Chain: ${cfg.name} (${cfg.chainId})`);
   console.log(`========================================================`);
 

@@ -32,7 +32,7 @@ export async function rebalanceVault() {
   const publicClient = createPublicClient({ chain, transport: http(cfg.proxyUrl) });
   const walletClient = createWalletClient({ account, chain, transport: http(cfg.proxyUrl) });
 
-  const artifact = JSON.parse(readFileSync(resolve(root, "artifacts/PortusMaxVault.json"), "utf8"));
+  const artifact = JSON.parse(readFileSync(resolve(root, "artifacts/SolCrossVault.json"), "utf8"));
 
   console.log(`\n--- Calling Atomic Cross-Runtime Rebalance ---`);
   console.log(`Vault: ${vaultAddress}`);

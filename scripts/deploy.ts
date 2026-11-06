@@ -18,10 +18,10 @@ export function romeChain(cfg: RomeConfig) {
   } as const;
 }
 
-export async function deployPortusMax() {
+export async function deploySolCross() {
   const cfg = loadConfig();
   console.log(`\n======================================================`);
-  console.log(`  PORTUSMAX VAULT DEPLOYMENT - ROME PROTOCOL`);
+  console.log(`  SOLCROSS VAULT DEPLOYMENT - ROME PROTOCOL`);
   console.log(`======================================================`);
   console.log(`Target Network : ${cfg.name} (Chain ID: ${cfg.chainId})`);
   console.log(`RPC URL        : ${cfg.proxyUrl}`);
@@ -56,7 +56,7 @@ export async function deployPortusMax() {
   }
 
   const artifact = JSON.parse(
-    readFileSync(resolve(root, "artifacts/PortusMaxVault.json"), "utf8")
+    readFileSync(resolve(root, "artifacts/SolCrossVault.json"), "utf8")
   );
 
   // Default target Solana parameters (Solana Devnet Lending / Mock Market Account)
@@ -120,7 +120,7 @@ export async function deployPortusMax() {
   console.log("  NEXT STEPS FOR ROME ARENA SUBMISSION:");
   console.log("======================================================");
   console.log("1. Go to: https://arena.mainnet.romeprotocol.xyz/apps/new");
-  console.log(`2. Register App: 'PortusMax'`);
+  console.log(`2. Register App: 'SolCross Yield Port'`);
   console.log(`3. Chain: Hadrian (200010)`);
   console.log(`4. Contract Address: ${deployedAddress}`);
   console.log("5. Start accumulating Laurels from on-chain TVL & volume!\n");
@@ -129,7 +129,7 @@ export async function deployPortusMax() {
 }
 
 if (process.argv[1]?.replace(/\\/g, "/").includes("scripts/deploy")) {
-  deployPortusMax().catch((err) => {
+  deploySolCross().catch((err) => {
     console.error("Deployment failed:", err);
     process.exit(1);
   });
