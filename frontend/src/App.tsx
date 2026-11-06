@@ -14,7 +14,7 @@ import {
   fetchEvmOnChainData,
   fetchVaultOnChainData,
 } from "./lib/onchain";
-import { connectEvmWallet, checkEagerEvmConnection } from "./lib/evmWallet";
+import { connectEvmWallet, checkEagerEvmConnection, getInjectedEvmProvider } from "./lib/evmWallet";
 import { ArrowUpRight, Trophy, Sparkles, BookOpen, Droplets, ExternalLink, ShieldCheck, Rocket } from "lucide-react";
 import type { Hex } from "viem";
 
@@ -166,8 +166,8 @@ export const App: React.FC = () => {
 
   // Listen for MetaMask account changes
   useEffect(() => {
-    if (typeof window !== "undefined" && (window as any).ethereum) {
-      const eth = (window as any).ethereum;
+    const provider = getInjectedEvmProvider();
+    if (provider) {
       const onAccounts = (accounts: string[]) => {
         if (accounts.length > 0) {
           setEvmAddress(accounts[0]);
@@ -180,10 +180,10 @@ export const App: React.FC = () => {
         }
       };
 
-      eth.on("accountsChanged", onAccounts);
+      provider.on("accountsChanged", onAccounts);
       return () => {
         try {
-          eth.removeListener("accountsChanged", onAccounts);
+          provider.removeListener("accountsChanged", onAccounts);
         } catch (e) {}
       };
     }
@@ -269,13 +269,13 @@ export const App: React.FC = () => {
     let txHash = "";
 
     if (activeLane === "evm") {
-      if (!evmAddress || !(window as any).ethereum) {
+      const provider = getInjectedEvmProvider();
+      if (!evmAddress || !provider) {
         throw new Error("MetaMask is not connected");
       }
-      const eth = (window as any).ethereum;
       const amountUnits = BigInt(Math.floor(amount * 1e6));
       const depositCallData = `0xb6b55f25${amountUnits.toString(16).padStart(64, "0")}`;
-      txHash = await eth.request({
+      txHash = await provider.request({
         method: "eth_sendTransaction",
         params: [
           {
@@ -316,13 +316,13 @@ export const App: React.FC = () => {
     let txHash = "";
 
     if (activeLane === "evm") {
-      if (!evmAddress || !(window as any).ethereum) {
+      const provider = getInjectedEvmProvider();
+      if (!evmAddress || !provider) {
         throw new Error("MetaMask is not connected");
       }
-      const eth = (window as any).ethereum;
       const amountUnits = BigInt(Math.floor(amount * 1e6));
       const withdrawCallData = `0x2e1a7d4d${amountUnits.toString(16).padStart(64, "0")}`;
-      txHash = await eth.request({
+      txHash = await provider.request({
         method: "eth_sendTransaction",
         params: [
           {
@@ -360,9 +360,9 @@ export const App: React.FC = () => {
   // --- Real Rebalance Trigger ---
   const handleRebalance = async (): Promise<string> => {
     let txHash = "";
-    if (activeLane === "evm" && evmAddress && (window as any).ethereum) {
-      const eth = (window as any).ethereum;
-      txHash = await eth.request({
+    const provider = getInjectedEvmProvider();
+    if (activeLane === "evm" && evmAddress && provider) {
+      txHash = await provider.request({
         method: "eth_sendTransaction",
         params: [
           {

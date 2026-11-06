@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { encodeDeployData, createPublicClient, http, type Hex } from "viem";
 import { VAULT_ABI, VAULT_BYTECODE } from "../lib/vaultContractData";
+import { getInjectedEvmProvider } from "../lib/evmWallet";
 import type { FrontendConfig } from "../lib/config";
 import confetti from "canvas-confetti";
 
@@ -48,7 +49,9 @@ export const DeployModal: React.FC<DeployModalProps> = ({
   };
 
   const handleDeploy = async () => {
-    if (!evmAddress || !(window as any).ethereum) {
+    const provider = getInjectedEvmProvider();
+
+    if (!provider) {
       onConnectEvm();
       return;
     }
@@ -59,9 +62,54 @@ export const DeployModal: React.FC<DeployModalProps> = ({
       setTxHash(null);
       setDeployedContract(null);
 
+      // 1. Ensure the EVM account is explicitly requested on this specific provider (avoids Phantom intercept)
+      let activeAccount = evmAddress;
+      try {
+        const accounts = await provider.request({ method: "eth_requestAccounts" });
+        if (accounts && accounts.length > 0) {
+          activeAccount = accounts[0];
+        }
+      } catch (authErr: any) {
+        if (authErr.code === -32002) {
+          throw new Error("Connection request already pending in your wallet extension. Please open MetaMask to approve.");
+        }
+      }
+
+      if (!activeAccount) {
+        throw new Error("No authorized EVM account found. Please connect MetaMask.");
+      }
+
+      // 2. Ensure chain is switched to Rome Hadrian
+      const hexChainId = `0x${config.chainId.toString(16)}`;
+      try {
+        await provider.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: hexChainId }],
+        });
+      } catch (switchError: any) {
+        try {
+          await provider.request({
+            method: "wallet_addEthereumChain",
+            params: [
+              {
+                chainId: hexChainId,
+                chainName: config.chainName,
+                rpcUrls: [config.rpcUrl],
+                nativeCurrency: {
+                  name: config.networkId === "rubicon" ? "ROME" : "USDC",
+                  symbol: config.networkId === "rubicon" ? "ROME" : "USDC",
+                  decimals: 18,
+                },
+                blockExplorerUrls: [config.explorerUrl],
+              },
+            ],
+          });
+        } catch (addError: any) {}
+      }
+
       const zeroBytes32 = "0x0000000000000000000000000000000000000000000000000000000000000000" as Hex;
 
-      // Encode Constructor Arguments: [wUSDC, usdcMintBytes32, solProgramId, solMarketAccount, solReserveAta]
+      // 3. Encode Constructor Arguments: [wUSDC, usdcMintBytes32, solProgramId, solMarketAccount, solReserveAta]
       const deployData = encodeDeployData({
         abi: VAULT_ABI,
         bytecode: VAULT_BYTECODE,
@@ -74,16 +122,13 @@ export const DeployModal: React.FC<DeployModalProps> = ({
         ],
       });
 
-      const eth = (window as any).ethereum;
-
-      // Request contract deployment via MetaMask GUI
-      const hash: string = await eth.request({
+      // 4. Request contract deployment via MetaMask directly
+      const hash: string = await provider.request({
         method: "eth_sendTransaction",
         params: [
           {
-            from: evmAddress,
+            from: activeAccount,
             data: deployData,
-            gas: "0x18cba80", // 26,000,000 gas for Rome runtime
           },
         ],
       });
@@ -91,7 +136,7 @@ export const DeployModal: React.FC<DeployModalProps> = ({
       setTxHash(hash);
       setStatus("confirming");
 
-      // Poll transaction receipt on Rome EVM
+      // 5. Poll transaction receipt on Rome EVM node
       const publicClient = createPublicClient({
         transport: http(config.rpcUrl),
       });
