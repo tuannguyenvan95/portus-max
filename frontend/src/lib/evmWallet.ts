@@ -20,6 +20,20 @@ export function getInjectedEvmProvider() {
   return null;
 }
 
+export async function checkEagerEvmConnection(): Promise<string | null> {
+  const provider = getInjectedEvmProvider();
+  if (!provider) return null;
+  try {
+    const accounts = await provider.request({ method: "eth_accounts" });
+    if (accounts && accounts.length > 0) {
+      return accounts[0];
+    }
+  } catch (e) {
+    console.debug("Silent EVM eager check returned:", e);
+  }
+  return null;
+}
+
 export async function connectEvmWallet(config: FrontendConfig): Promise<string> {
   const provider = getInjectedEvmProvider();
 

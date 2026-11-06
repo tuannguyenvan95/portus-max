@@ -1,5 +1,17 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Zap, RefreshCw, ChevronDown, LogOut, ExternalLink, Check } from "lucide-react";
+import { 
+  Zap, 
+  RefreshCw, 
+  ChevronDown, 
+  LogOut, 
+  ExternalLink, 
+  Check, 
+  Info, 
+  Droplets, 
+  Copy, 
+  HelpCircle,
+  BookOpen
+} from "lucide-react";
 import type { FrontendConfig } from "../lib/config";
 
 interface HeaderProps {
@@ -17,6 +29,8 @@ interface HeaderProps {
   onDisconnectSolana: () => void;
   onRefreshOnChain: () => void;
   isRefreshing: boolean;
+  onOpenAbout: () => void;
+  onOpenFaucet: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -34,8 +48,11 @@ export const Header: React.FC<HeaderProps> = ({
   onDisconnectSolana,
   onRefreshOnChain,
   isRefreshing,
+  onOpenAbout,
+  onOpenFaucet,
 }) => {
   const [networkDropdownOpen, setNetworkDropdownOpen] = useState(false);
+  const [copiedBadge, setCopiedBadge] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -49,13 +66,20 @@ export const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const handleCopy = (text: string, id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(text);
+    setCopiedBadge(id);
+    setTimeout(() => setCopiedBadge(null), 2000);
+  };
+
   return (
-    <header className="border-b border-rome-border bg-rome-dark/95 backdrop-blur-md sticky top-0 z-50">
+    <header className="border-b border-rome-border bg-rome-dark/95 backdrop-blur-md sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
         {/* Brand / Logo */}
         <div className="flex items-center gap-3">
-          <div className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-tr from-emerald-500 via-blue-600 to-purple-600 shadow-glow p-0.5">
-            <div className="w-full h-full bg-rome-dark rounded-[10px] flex items-center justify-center font-bold text-xl text-white">
+          <div className="relative flex items-center justify-center w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-500 via-blue-600 to-purple-600 shadow-glow p-0.5 shrink-0">
+            <div className="w-full h-full bg-rome-dark rounded-[14px] flex items-center justify-center font-bold text-xl text-white">
               ⚡
             </div>
           </div>
@@ -74,13 +98,13 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Center: Sleek Canonical Rome Network Selector & Settlement Pill */}
-        <div className="hidden md:flex items-center gap-3">
+        {/* Center: Network Selector, Settlement Badge & Info Links */}
+        <div className="hidden lg:flex items-center gap-2.5">
           {/* Network Selector Dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setNetworkDropdownOpen(!networkDropdownOpen)}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-rome-card border border-rome-border text-xs font-semibold text-slate-200 hover:border-slate-600 hover:bg-rome-surface transition-all"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rome-card border border-rome-border text-xs font-semibold text-slate-200 hover:border-slate-600 hover:bg-rome-surface transition-all"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               <span>{config.chainName}</span>
@@ -132,25 +156,52 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Settlement Badge */}
-          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rome-card border border-rome-border text-xs text-slate-300">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rome-card border border-rome-border text-xs text-slate-300">
             <Zap className="w-3.5 h-3.5 text-rome-solana" />
             <span className="text-slate-400">Settlement:</span>
             <span className="font-semibold text-rome-solana capitalize">
               Solana {config.solanaCluster} (~400ms)
             </span>
           </div>
+
+          {/* About / Project Info Button */}
+          <button
+            onClick={onOpenAbout}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 hover:border-blue-500/40 text-xs font-semibold text-blue-300 hover:text-white transition-all shadow-glow"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-blue-400" />
+            <span>Protocol Docs</span>
+          </button>
+
+          {/* Faucet / Devnet Guide Button */}
+          <button
+            onClick={onOpenFaucet}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rome-card border border-rome-border hover:border-slate-600 text-xs font-semibold text-slate-300 hover:text-white transition-all"
+          >
+            <Droplets className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Faucet</span>
+          </button>
         </div>
 
-        {/* Right: Wallet Connectors & Actions */}
+        {/* Right: Wallet Connectors & Disconnect Actions */}
         <div className="flex items-center gap-2">
           {/* Refresh On-Chain Data Button */}
           <button
             onClick={onRefreshOnChain}
             title="Refresh Real On-Chain Balances"
             disabled={isRefreshing}
-            className="p-2.5 rounded-xl bg-rome-card border border-rome-border text-slate-300 hover:text-white hover:border-slate-600 transition-all"
+            className="p-2.5 rounded-xl bg-rome-card border border-rome-border text-slate-300 hover:text-white hover:border-slate-600 transition-all shrink-0"
           >
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-blue-400" : ""}`} />
+          </button>
+
+          {/* Quick info trigger on mobile */}
+          <button
+            onClick={onOpenAbout}
+            title="About SolCross Project"
+            className="lg:hidden p-2.5 rounded-xl bg-rome-card border border-rome-border text-blue-400 hover:text-white transition-all shrink-0"
+          >
+            <Info className="w-4 h-4" />
           </button>
 
           {/* EVM (MetaMask / Injected) Connector & Disconnect */}
@@ -169,6 +220,13 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
                 <span>{evmAddress.slice(0, 6)}...{evmAddress.slice(-4)}</span>
+              </button>
+              <button
+                onClick={(e) => handleCopy(evmAddress, "evm", e)}
+                title="Copy EVM Address"
+                className="p-2 text-slate-400 hover:text-slate-200 border-l border-rome-border transition-colors"
+              >
+                {copiedBadge === "evm" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
               <button
                 onClick={onDisconnectEvm}
@@ -203,6 +261,13 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <span className="text-rome-solana font-bold">◎</span>
                 <span>{solanaAddress.slice(0, 4)}...{solanaAddress.slice(-4)}</span>
+              </button>
+              <button
+                onClick={(e) => handleCopy(solanaAddress, "sol", e)}
+                title="Copy Solana Address"
+                className="p-2 text-slate-400 hover:text-slate-200 border-l border-rome-border transition-colors"
+              >
+                {copiedBadge === "sol" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
               <button
                 onClick={onDisconnectSolana}

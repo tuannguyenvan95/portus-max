@@ -1,5 +1,16 @@
 import React, { useState } from "react";
-import { ArrowDownCircle, ArrowUpCircle, Check, Loader2, Sparkles, AlertCircle, ExternalLink, HelpCircle } from "lucide-react";
+import { 
+  ArrowDownCircle, 
+  ArrowUpCircle, 
+  Check, 
+  Loader2, 
+  Sparkles, 
+  AlertCircle, 
+  ExternalLink, 
+  HelpCircle,
+  Calculator,
+  Zap
+} from "lucide-react";
 import confetti from "canvas-confetti";
 import type { FrontendConfig } from "../lib/config";
 
@@ -15,6 +26,7 @@ interface TerminalProps {
   onDeposit: (amount: number) => Promise<string>;
   onWithdraw: (amount: number) => Promise<string>;
   onOpenConnectModal: () => void;
+  onOpenFaucet: () => void;
 }
 
 export const Terminal: React.FC<TerminalProps> = ({
@@ -29,6 +41,7 @@ export const Terminal: React.FC<TerminalProps> = ({
   onDeposit,
   onWithdraw,
   onOpenConnectModal,
+  onOpenFaucet,
 }) => {
   const [mode, setMode] = useState<"deposit" | "withdraw">("deposit");
   const [amount, setAmount] = useState<string>("");
@@ -42,6 +55,8 @@ export const Terminal: React.FC<TerminalProps> = ({
 
   const estimatedShares = sharePrice > 0 ? numAmount / sharePrice : numAmount;
   const projectedYearlyYield = (numAmount * currentApy) / 100;
+  const projectedMonthlyYield = projectedYearlyYield / 12;
+  const projectedDailyYield = projectedYearlyYield / 365;
 
   const handlePercentage = (pct: number) => {
     const val = (maxAvailable * pct) / 100;
@@ -90,7 +105,7 @@ export const Terminal: React.FC<TerminalProps> = ({
   };
 
   return (
-    <div className="bg-rome-card border border-rome-border rounded-2xl p-6 shadow-glow relative overflow-hidden flex flex-col justify-between">
+    <div className="bg-rome-card border border-rome-border rounded-3xl p-6 shadow-glow relative overflow-hidden flex flex-col justify-between">
       <div className="absolute -top-24 -right-24 w-48 h-48 bg-rome-solana/10 rounded-full blur-3xl pointer-events-none"></div>
 
       <div>
@@ -131,7 +146,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 
           <div className="text-right">
             <div className="text-[11px] text-slate-400">
-              {mode === "deposit" ? "Spendable Balance:" : "Redeemable Shares:"}
+              {mode === "deposit" ? "Spendable Wallet Balance:" : "Redeemable Shares:"}
             </div>
             <div className="text-xs font-bold font-mono text-white">
               {maxAvailable.toFixed(2)} USDC
@@ -140,11 +155,11 @@ export const Terminal: React.FC<TerminalProps> = ({
         </div>
 
         {/* Input Form */}
-        <div className="bg-rome-dark/80 border border-rome-border rounded-xl p-4 space-y-3">
+        <div className="bg-rome-dark/80 border border-rome-border rounded-2xl p-4 sm:p-5 space-y-3">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>{mode === "deposit" ? "Deposit Amount" : "Withdraw Amount"}</span>
+            <span>{mode === "deposit" ? "Enter Deposit Amount" : "Enter Withdrawal Amount"}</span>
             <span className="font-mono text-slate-300">
-              Active Lane: {activeLane === "evm" ? "MetaMask (EVM)" : "Phantom (Solana)"}
+              Lane: {activeLane === "evm" ? "MetaMask (EVM)" : "Phantom (Solana)"}
             </span>
           </div>
 
@@ -157,21 +172,21 @@ export const Terminal: React.FC<TerminalProps> = ({
                 setAmount(e.target.value);
                 setStatus("idle");
               }}
-              className="bg-transparent text-2xl sm:text-3xl font-bold font-mono text-white outline-none w-full"
+              className="bg-transparent text-2xl sm:text-4xl font-bold font-mono text-white outline-none w-full"
             />
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-rome-card border border-rome-border text-xs font-bold text-white shrink-0">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rome-card border border-rome-border text-xs font-bold text-white shrink-0 shadow-sm">
               <span className="text-rome-solana">●</span>
               <span>USDC</span>
             </div>
           </div>
 
           {/* Preset Percentage Pills */}
-          <div className="grid grid-cols-4 gap-2 pt-1 border-t border-rome-border/40">
+          <div className="grid grid-cols-4 gap-2 pt-2 border-t border-rome-border/40">
             {[25, 50, 75, 100].map((pct) => (
               <button
                 key={pct}
                 onClick={() => handlePercentage(pct)}
-                className="py-1 px-2 rounded-md bg-rome-card hover:bg-slate-800 text-[11px] font-mono font-semibold text-slate-300 border border-rome-border/60 transition-colors"
+                className="py-1.5 px-2 rounded-lg bg-rome-card hover:bg-slate-800 text-[11px] font-mono font-semibold text-slate-300 border border-rome-border/60 hover:text-white transition-colors"
               >
                 {pct === 100 ? "MAX" : `${pct}%`}
               </button>
@@ -179,8 +194,8 @@ export const Terminal: React.FC<TerminalProps> = ({
           </div>
         </div>
 
-        {/* Dynamic Simulation Breakdown */}
-        <div className="mt-4 p-4 rounded-xl bg-rome-surface/60 border border-rome-border text-xs space-y-2">
+        {/* Live Return Projection Breakdown */}
+        <div className="mt-4 p-4 rounded-2xl bg-rome-surface/60 border border-rome-border text-xs space-y-2.5">
           <div className="flex items-center justify-between text-slate-400">
             <span>Expected Shares ({mode === "deposit" ? "minted" : "burned"}):</span>
             <span className="font-mono font-bold text-white">
@@ -195,7 +210,18 @@ export const Terminal: React.FC<TerminalProps> = ({
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-slate-400">
+          {numAmount > 0 && (
+            <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-rome-border/40 text-[11px]">
+              <div className="text-slate-400">
+                Daily: <span className="font-mono text-slate-200 font-semibold">+${projectedDailyYield.toFixed(4)}</span>
+              </div>
+              <div className="text-right text-slate-400">
+                Monthly: <span className="font-mono text-slate-200 font-semibold">+${projectedMonthlyYield.toFixed(2)}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between text-slate-400 pt-1 border-t border-rome-border/40">
             <span>Execution Runtime:</span>
             <span className="font-mono text-rome-solana font-semibold">
               {config.chainName} · Solana L1 Atomic CPI
@@ -203,17 +229,26 @@ export const Terminal: React.FC<TerminalProps> = ({
           </div>
         </div>
 
+        {/* Balance Notice / Faucet Help */}
         {isConnected && spendableBalance === 0 && mode === "deposit" && (
-          <div className="mt-3 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[11px] text-blue-300 flex items-start gap-2">
-            <HelpCircle className="w-4 h-4 shrink-0 mt-0.5 text-blue-400" />
-            <div>
-              <span>Current on-chain USDC balance is 0.00. </span>
-              {activeLane === "solana" ? (
-                <span>If your assets reside on Solana Mainnet, switch the network selector at the top to Rubicon Mainnet, or fund with devnet SOL/USDC.</span>
-              ) : (
-                <span>Please fund your wallet with testnet USDC on Rome Hadrian to execute on-chain deposits.</span>
-              )}
+          <div className="mt-3 p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300 flex items-start justify-between gap-3">
+            <div className="flex items-start gap-2">
+              <HelpCircle className="w-4 h-4 shrink-0 mt-0.5 text-blue-400" />
+              <div>
+                <span>Current on-chain USDC balance is 0.00. </span>
+                {activeLane === "solana" ? (
+                  <span>Fund your Phantom wallet with Devnet SOL & USDC to test.</span>
+                ) : (
+                  <span>Fund your MetaMask wallet with Rome Hadrian testnet USDC.</span>
+                )}
+              </div>
             </div>
+            <button
+              onClick={onOpenFaucet}
+              className="text-xs font-bold underline text-cyan-400 hover:text-cyan-300 shrink-0"
+            >
+              Get Tokens
+            </button>
           </div>
         )}
       </div>
@@ -221,14 +256,14 @@ export const Terminal: React.FC<TerminalProps> = ({
       {/* Action Button & Status Feedback */}
       <div className="mt-5 space-y-3">
         {errorMessage && (
-          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex items-start gap-2">
+          <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex items-start gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {status === "success" && lastTxHash && (
-          <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 flex items-center justify-between">
+          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4" />
               <span>On-Chain Transaction Confirmed!</span>
@@ -248,7 +283,7 @@ export const Terminal: React.FC<TerminalProps> = ({
         <button
           onClick={handleExecute}
           disabled={status === "submitting" || (isConnected && numAmount <= 0)}
-          className={`w-full py-3.5 px-4 rounded-xl text-sm font-bold tracking-wide transition-all shadow-glow flex items-center justify-center gap-2 ${
+          className={`w-full py-4 px-4 rounded-2xl text-sm font-bold tracking-wide transition-all shadow-glow flex items-center justify-center gap-2 ${
             !isConnected
               ? "bg-gradient-to-r from-emerald-500 via-blue-600 to-purple-600 text-white hover:opacity-90"
               : numAmount <= 0

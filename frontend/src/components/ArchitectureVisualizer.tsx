@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowRight, Cpu, Layers, Sparkles, CheckCircle2, Info, ArrowLeftRight } from "lucide-react";
+import { ArrowRight, Cpu, Layers, Sparkles, CheckCircle2, Info, ArrowLeftRight, Zap } from "lucide-react";
 
 export const ArchitectureVisualizer: React.FC = () => {
   const [activeStep, setActiveStep] = useState<number>(1);
@@ -12,17 +12,17 @@ export const ArchitectureVisualizer: React.FC = () => {
       badge: "Single State",
       color: "from-blue-500 to-indigo-500",
       description:
-        "MetaMask signs EVM transaction or Phantom signs Solana v1 transaction. Both lanes interact with the exact same wUSDC wrapper and ERC-4626 vault state.",
+        "MetaMask signs an EVM transaction or Phantom signs a Solana v1 transaction. Both lanes interact with the exact same wUSDC token account and ERC-4626 vault state.",
       tech: "Viem + Rome LaneSigner / Synthetic Address (PDA)",
     },
     {
       id: 2,
-      title: "2. PortusMax Vault",
+      title: "2. SolCross Vault",
       subtitle: "Solidity Core on Rome EVM",
       badge: "ERC-4626 Standard",
       color: "from-indigo-500 to-purple-500",
       description:
-        "Standardized tokenized vault tracks share price (pmUSDC), manages 25% liquid buffer, and dynamically routes excess capital into Solana DeFi protocols.",
+        "Standardized tokenized vault tracks share price (scUSDC), maintains 25% instant liquid reserve on Rome, and routes 75% into Solana DeFi protocols via atomic CPI.",
       tech: "Solidity ^0.8.20 + solc optimizer (200 runs)",
     },
     {
@@ -48,7 +48,7 @@ export const ArchitectureVisualizer: React.FC = () => {
   ];
 
   return (
-    <div className="bg-rome-card border border-rome-border rounded-2xl p-6 space-y-6">
+    <div className="bg-rome-card border border-rome-border rounded-2xl p-6 space-y-6 shadow-glow">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-rome-border/60 pb-4">
         <div>
           <div className="flex items-center gap-2">
@@ -58,7 +58,7 @@ export const ArchitectureVisualizer: React.FC = () => {
             </h2>
           </div>
           <p className="text-xs text-rome-textDim mt-0.5">
-            Click any step to inspect how Rome executes Solidity and Solana programs in a single block
+            Click any step below to inspect how Rome executes Solidity and Solana programs in a single block
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -76,7 +76,7 @@ export const ArchitectureVisualizer: React.FC = () => {
             <div
               key={step.id}
               onClick={() => setActiveStep(step.id)}
-              className={`cursor-pointer rounded-xl p-4 transition-all border relative overflow-hidden flex flex-col justify-between ${
+              className={`cursor-pointer rounded-2xl p-4 transition-all border relative overflow-hidden flex flex-col justify-between ${
                 isSelected
                   ? "bg-rome-surface border-blue-500/80 shadow-glow"
                   : "bg-rome-dark/50 border-rome-border hover:border-slate-700 hover:bg-rome-surface/40"
@@ -98,41 +98,44 @@ export const ArchitectureVisualizer: React.FC = () => {
                     {step.badge}
                   </span>
                 </div>
-                <h3 className="text-sm font-bold text-white">{step.title}</h3>
-                <p className="text-xs text-rome-textDim font-medium mt-0.5">{step.subtitle}</p>
+                <div className="font-bold text-sm text-white">{step.title}</div>
+                <div className="text-xs text-slate-400 mt-0.5 font-medium">{step.subtitle}</div>
               </div>
 
-              <div className="mt-4 pt-2 border-t border-rome-border/40 text-[11px] font-mono text-slate-400">
-                {step.tech}
+              <div className="mt-4 pt-3 border-t border-rome-border/40 flex items-center justify-between text-[11px]">
+                <span className="font-mono text-slate-500 text-[10px] truncate max-w-[130px]">
+                  {step.tech}
+                </span>
+                <span className={`font-bold ${isSelected ? "text-blue-400" : "text-slate-500"}`}>
+                  →
+                </span>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Selected Step Deep Dive Details */}
-      <div className="bg-rome-dark/70 border border-rome-border rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 mt-0.5">
-            <Info className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-slate-200">
-              {steps[activeStep - 1].title}: {steps[activeStep - 1].subtitle}
+      {/* Deep-Dive Inspection Card */}
+      {(() => {
+        const current = steps.find((s) => s.id === activeStep) || steps[0];
+        return (
+          <div className="p-4 rounded-xl bg-rome-dark/80 border border-rome-border flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+              <Zap className="w-5 h-5" />
             </div>
-            <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-              {steps[activeStep - 1].description}
-            </p>
+            <div className="space-y-1">
+              <div className="text-xs uppercase font-bold tracking-wider text-blue-400 flex items-center gap-2">
+                <span>{current.title} · Deep Dive</span>
+                <span className="text-[10px] font-normal text-slate-400">({current.subtitle})</span>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">{current.description}</p>
+              <div className="text-[11px] font-mono text-slate-400 pt-1">
+                Implementation: <span className="text-emerald-400">{current.tech}</span>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div className="shrink-0">
-          <div className="text-[11px] text-emerald-400 flex items-center gap-1.5 font-semibold bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Atomic Execution (~400ms)</span>
-          </div>
-        </div>
-      </div>
+        );
+      })()}
     </div>
   );
 };
