@@ -143,9 +143,9 @@ export const App: React.FC = () => {
       const provider = (window as any).solana;
       if (provider.isPhantom) {
         const onAccountChanged = (publicKey: any) => {
-          if (publicKey) {
+          const isConnected = localStorage.getItem("solcross_solana_connected") === "true";
+          if (publicKey && isConnected) {
             setSolanaAddress(publicKey.toString());
-            localStorage.setItem("solcross_solana_connected", "true");
           } else {
             setSolanaAddress(null);
             setSolBalance(0);
@@ -169,9 +169,9 @@ export const App: React.FC = () => {
     const provider = getInjectedEvmProvider();
     if (provider) {
       const onAccounts = (accounts: string[]) => {
-        if (accounts.length > 0) {
+        const isConnected = localStorage.getItem("solcross_evm_connected") === "true";
+        if (accounts.length > 0 && isConnected) {
           setEvmAddress(accounts[0]);
-          localStorage.setItem("solcross_evm_connected", "true");
         } else {
           setEvmAddress(null);
           setEvmNativeBalance(0);
@@ -213,13 +213,26 @@ export const App: React.FC = () => {
   };
 
   // --- Disconnect EVM Wallet ---
-  const handleDisconnectEvm = () => {
+  const handleDisconnectEvm = async () => {
     setEvmAddress(null);
     setEvmNativeBalance(0);
     setEvmWusdcBalance(0);
     localStorage.removeItem("solcross_evm_connected");
     if (activeLane === "evm") {
       setUserShares(0);
+    }
+
+    // Attempt EIP-2255 permission revoke directly in MetaMask
+    try {
+      const provider = getInjectedEvmProvider();
+      if (provider?.request) {
+        await provider.request({
+          method: "wallet_revokePermissions",
+          params: [{ eth_accounts: {} }],
+        });
+      }
+    } catch (e) {
+      console.debug("wallet_revokePermissions not supported or dismissed:", e);
     }
   };
 
