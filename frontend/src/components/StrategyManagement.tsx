@@ -62,7 +62,11 @@ export const StrategyManagement: React.FC<StrategyManagementProps> = ({
             <span>Rebalance settled atomically on Solana L1!</span>
           </div>
           <a
-            href={`${config.explorerUrl}/tx/${rebalanceTx}`}
+            href={
+              rebalanceTx.startsWith("0x")
+                ? `${config.explorerUrl}/tx/${rebalanceTx}`
+                : `https://explorer.solana.com/tx/${rebalanceTx}?cluster=${config.solanaCluster}`
+            }
             target="_blank"
             rel="noreferrer"
             className="font-mono underline flex items-center gap-1 hover:text-white"

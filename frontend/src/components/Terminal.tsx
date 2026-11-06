@@ -269,12 +269,16 @@ export const Terminal: React.FC<TerminalProps> = ({
               <span>On-Chain Transaction Confirmed!</span>
             </div>
             <a
-              href={`${config.explorerUrl}/tx/${lastTxHash}`}
+              href={
+                activeLane === "solana"
+                  ? `https://explorer.solana.com/tx/${lastTxHash}?cluster=${config.solanaCluster}`
+                  : `${config.explorerUrl}/tx/${lastTxHash}`
+              }
               target="_blank"
               rel="noreferrer"
               className="font-mono underline flex items-center gap-1 hover:text-white"
             >
-              <span>View Explorer</span>
+              <span>View Explorer ({activeLane === "solana" ? "Solana" : "Rome"})</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>

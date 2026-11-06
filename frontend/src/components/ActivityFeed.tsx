@@ -91,7 +91,11 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ config, activities }
                 </div>
               )}
               <a
-                href={`${config.explorerUrl}/tx/${act.txHash}`}
+                href={
+                  act.walletLane === "solana"
+                    ? `https://explorer.solana.com/tx/${act.txHash}?cluster=${config.solanaCluster}`
+                    : `${config.explorerUrl}/tx/${act.txHash}`
+                }
                 target="_blank"
                 rel="noreferrer"
                 className="text-[11px] font-mono text-blue-400 hover:text-blue-300 underline inline-flex items-center gap-1"
