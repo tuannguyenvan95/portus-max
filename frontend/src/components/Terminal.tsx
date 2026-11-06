@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowDownCircle, ArrowUpCircle, Check, Loader2, Sparkles, AlertCircle, ExternalLink } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Check, Loader2, Sparkles, AlertCircle, ExternalLink, HelpCircle } from "lucide-react";
 import confetti from "canvas-confetti";
 import type { FrontendConfig } from "../lib/config";
 
@@ -8,7 +8,7 @@ interface TerminalProps {
   evmAddress: string | null;
   solanaAddress: string | null;
   activeLane: "evm" | "solana";
-  userUsdcBalance: number;
+  spendableBalance: number;
   userShares: number;
   sharePrice: number;
   currentApy: number;
@@ -22,7 +22,7 @@ export const Terminal: React.FC<TerminalProps> = ({
   evmAddress,
   solanaAddress,
   activeLane,
-  userUsdcBalance,
+  spendableBalance,
   userShares,
   sharePrice,
   currentApy,
@@ -32,13 +32,13 @@ export const Terminal: React.FC<TerminalProps> = ({
 }) => {
   const [mode, setMode] = useState<"deposit" | "withdraw">("deposit");
   const [amount, setAmount] = useState<string>("");
-  const [status, setStatus] = useState<"idle" | "approving" | "submitting" | "success" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const numAmount = parseFloat(amount) || 0;
   const isConnected = activeLane === "evm" ? !!evmAddress : !!solanaAddress;
-  const maxAvailable = mode === "deposit" ? userUsdcBalance : userShares * sharePrice;
+  const maxAvailable = mode === "deposit" ? spendableBalance : userShares * sharePrice;
 
   const estimatedShares = sharePrice > 0 ? numAmount / sharePrice : numAmount;
   const projectedYearlyYield = (numAmount * currentApy) / 100;
@@ -70,33 +70,31 @@ export const Terminal: React.FC<TerminalProps> = ({
       setLastTxHash(txHash);
       setStatus("success");
 
-      // Trigger celebration confetti
       try {
         confetti({
           particleCount: 80,
           spread: 70,
           origin: { y: 0.6 },
-          colors: ["#3B82F6", "#14F195", "#8B5CF6", "#F59E0B"],
+          colors: ["#14F195", "#3B82F6", "#9945FF", "#F59E0B"],
         });
       } catch (e) {
-        // ignore if canvas-confetti fails
+        // ignore
       }
 
       setAmount("");
     } catch (err: any) {
       console.error("Execution error:", err);
-      setErrorMessage(err.message || "Transaction failed on Rome EVM");
+      setErrorMessage(err.message || "On-chain transaction rejected or failed");
       setStatus("error");
     }
   };
 
   return (
     <div className="bg-rome-card border border-rome-border rounded-2xl p-6 shadow-glow relative overflow-hidden flex flex-col justify-between">
-      {/* Background Accent Gradient */}
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute -top-24 -right-24 w-48 h-48 bg-rome-solana/10 rounded-full blur-3xl pointer-events-none"></div>
 
       <div>
-        {/* Terminal Header & Mode Switcher */}
+        {/* Header & Mode Switcher */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-1.5 p-1 bg-rome-dark border border-rome-border rounded-xl">
             <button
@@ -107,7 +105,7 @@ export const Terminal: React.FC<TerminalProps> = ({
               }}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                 mode === "deposit"
-                  ? "bg-blue-600 text-white shadow-glow"
+                  ? "bg-gradient-to-r from-emerald-500 to-blue-600 text-white shadow-solanaGlow"
                   : "text-slate-400 hover:text-white"
               }`}
             >
@@ -133,18 +131,18 @@ export const Terminal: React.FC<TerminalProps> = ({
 
           <div className="text-right">
             <div className="text-[11px] text-slate-400">
-              {mode === "deposit" ? "Spendable Balance:" : "Redeemable Value:"}
+              {mode === "deposit" ? "Spendable on-chain:" : "Redeemable shares:"}
             </div>
             <div className="text-xs font-bold font-mono text-white">
-              ${maxAvailable.toFixed(2)} USDC
+              {maxAvailable.toFixed(2)} USDC
             </div>
           </div>
         </div>
 
-        {/* Input Card */}
+        {/* Input Form */}
         <div className="bg-rome-dark/80 border border-rome-border rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>{mode === "deposit" ? "Amount to Deposit" : "Amount to Withdraw"}</span>
+            <span>{mode === "deposit" ? "Deposit Amount" : "Withdraw Amount"}</span>
             <span className="font-mono text-slate-300">
               Lane: {activeLane === "evm" ? "MetaMask (EVM)" : "Phantom (Solana)"}
             </span>
@@ -162,7 +160,7 @@ export const Terminal: React.FC<TerminalProps> = ({
               className="bg-transparent text-2xl sm:text-3xl font-bold font-mono text-white outline-none w-full"
             />
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-rome-card border border-rome-border text-xs font-bold text-white shrink-0">
-              <span className="text-blue-400">●</span>
+              <span className="text-rome-solana">●</span>
               <span>USDC</span>
             </div>
           </div>
@@ -184,9 +182,9 @@ export const Terminal: React.FC<TerminalProps> = ({
         {/* Dynamic Simulation Breakdown */}
         <div className="mt-4 p-4 rounded-xl bg-rome-surface/60 border border-rome-border text-xs space-y-2">
           <div className="flex items-center justify-between text-slate-400">
-            <span>Expected Shares Received:</span>
+            <span>Expected Shares ({mode === "deposit" ? "minted" : "burned"}):</span>
             <span className="font-mono font-bold text-white">
-              {estimatedShares.toFixed(4)} pmUSDC
+              {estimatedShares.toFixed(4)} scUSDC
             </span>
           </div>
 
@@ -200,15 +198,24 @@ export const Terminal: React.FC<TerminalProps> = ({
           <div className="flex items-center justify-between text-slate-400">
             <span>Settlement Runtime:</span>
             <span className="font-mono text-rome-solana font-semibold">
-              Solana Devnet L1 (~400ms Atomic)
+              {config.chainName} · Solana L1 Atomic CPI
             </span>
           </div>
-
-          <div className="flex items-center justify-between text-slate-400">
-            <span>Estimated Gas:</span>
-            <span className="font-mono text-slate-300">~0.0001 USDC</span>
-          </div>
         </div>
+
+        {isConnected && spendableBalance === 0 && mode === "deposit" && (
+          <div className="mt-3 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[11px] text-blue-300 flex items-start gap-2">
+            <HelpCircle className="w-4 h-4 shrink-0 mt-0.5 text-blue-400" />
+            <div>
+              <span>Số dư USDC trên ví này hiện là 0.00. </span>
+              {activeLane === "solana" ? (
+                <span>Hãy nhận devnet SOL/USDC hoặc đổi sang mạng Mainnet ở thanh trên cùng nếu tài sản của bạn nằm trên Mainnet.</span>
+              ) : (
+                <span>Hãy nạp testnet USDC lên Rome Hadrian để giao dịch on-chain.</span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Action Button & Status Feedback */}
@@ -224,7 +231,7 @@ export const Terminal: React.FC<TerminalProps> = ({
           <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4" />
-              <span>Transaction Settled Successfully!</span>
+              <span>Giao dịch On-chain đã xác nhận!</span>
             </div>
             <a
               href={`${config.explorerUrl}/tx/${lastTxHash}`}
@@ -232,7 +239,7 @@ export const Terminal: React.FC<TerminalProps> = ({
               rel="noreferrer"
               className="font-mono underline flex items-center gap-1 hover:text-white"
             >
-              <span>View Explorer</span>
+              <span>Xem Explorer</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
@@ -243,30 +250,30 @@ export const Terminal: React.FC<TerminalProps> = ({
           disabled={status === "submitting" || (isConnected && numAmount <= 0)}
           className={`w-full py-3.5 px-4 rounded-xl text-sm font-bold tracking-wide transition-all shadow-glow flex items-center justify-center gap-2 ${
             !isConnected
-              ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white hover:opacity-90"
+              ? "bg-gradient-to-r from-emerald-500 via-blue-600 to-purple-600 text-white hover:opacity-90"
               : numAmount <= 0
               ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
               : status === "submitting"
               ? "bg-blue-700 text-white cursor-wait"
               : mode === "deposit"
-              ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:opacity-90"
+              ? "bg-gradient-to-r from-emerald-500 to-blue-600 text-white hover:opacity-90 shadow-solanaGlow"
               : "bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:opacity-90"
           }`}
         >
           {status === "submitting" ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Broadcasting to Rome & Solana L1...</span>
+              <span>Xác thực giao dịch trên ví và Solana L1...</span>
             </>
           ) : !isConnected ? (
-            <span>Connect Wallet to {mode === "deposit" ? "Deposit" : "Withdraw"}</span>
+            <span>Kết nối ví để {mode === "deposit" ? "Nạp" : "Rút"}</span>
           ) : mode === "deposit" ? (
             <>
-              <Sparkles className="w-4 h-4 text-rome-solana" />
-              <span>Deposit & Deploy to Solana Yield</span>
+              <Sparkles className="w-4 h-4 text-white" />
+              <span>Nạp & Triển khai vào Solana Yield (Atomic CPI)</span>
             </>
           ) : (
-            <span>Unwind & Withdraw to Wallet</span>
+            <span>Rút về ví on-chain</span>
           )}
         </button>
       </div>

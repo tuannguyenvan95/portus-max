@@ -5,17 +5,17 @@ import "../interfaces/IERC4626.sol";
 import "../rome/interface.sol";
 
 /**
- * @title PortusMaxVault
+ * @title SolCrossVault
  * @notice Institutional-Grade Dual-Lane Cross-Runtime Yield Port on Rome EVM.
  * @dev Combines ERC-4626 tokenized vault standard with Rome's native Solana CPI engine.
  *      Allows EVM (MetaMask) and Solana (Phantom/Backpack) users to deposit USDC,
  *      which is dynamically deployed via Atomic CPI into Solana DeFi programs
  *      without leaving custody or relying on asynchronous third-party bridges.
  */
-contract PortusMaxVault is IERC4626 {
+contract SolCrossVault is IERC4626 {
     // --- ERC-20 Token Metadata ---
-    string public constant override name = "PortusMax Yield Port Share";
-    string public constant override symbol = "pmUSDC";
+    string public constant override name = "SolCross Yield Port Share";
+    string public constant override symbol = "scUSDC";
     uint8 public constant override decimals = 6; // Matches wUSDC (Circle USDC 6-decimals)
 
     uint256 public override totalSupply;
@@ -55,17 +55,17 @@ contract PortusMaxVault is IERC4626 {
     event EmergencyShutdown(uint256 recalledAssets, uint256 timestamp);
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "PortusMax: caller is not owner");
+        require(msg.sender == owner, "SolCross: caller is not owner");
         _;
     }
 
     modifier onlyManager() {
-        require(msg.sender == owner || msg.sender == strategyManager, "PortusMax: unauthorized manager");
+        require(msg.sender == owner || msg.sender == strategyManager, "SolCross: unauthorized manager");
         _;
     }
 
     modifier whenNotPaused() {
-        require(!paused, "PortusMax: vault paused");
+        require(!paused, "SolCross: vault paused");
         _;
     }
 
@@ -150,38 +150,33 @@ contract PortusMaxVault is IERC4626 {
 
     // --- Standard Dual-Lane Deposit Entrypoints ---
 
-    /**
-     * @notice Convenient single-argument deposit for dual-lane compatibility (wraps deposit for msg.sender).
-     */
     function deposit(uint256 assets) external whenNotPaused returns (uint256 shares) {
         return deposit(assets, msg.sender);
     }
 
     function deposit(uint256 assets, address receiver) public override whenNotPaused returns (uint256 shares) {
-        require(assets > 0, "PortusMax: zero deposit");
-        require(receiver != address(0), "PortusMax: zero receiver");
+        require(assets > 0, "SolCross: zero deposit");
+        require(receiver != address(0), "SolCross: zero receiver");
 
         shares = convertToShares(assets);
-        require(shares > 0, "PortusMax: zero shares minted");
+        require(shares > 0, "SolCross: zero shares minted");
 
-        // Pull tokens from user (EVM wallet or Solana synthetic address)
-        require(underlyingAsset.transferFrom(msg.sender, address(this), assets), "PortusMax: transferFrom failed");
+        require(underlyingAsset.transferFrom(msg.sender, address(this), assets), "SolCross: transferFrom failed");
 
         _mint(receiver, shares);
         idleAssets += assets;
 
-        // Auto-rebalance if idle buffer exceeds target threshold
         _checkAndAutoRebalance();
 
         emit Deposit(msg.sender, receiver, assets, shares);
     }
 
     function mint(uint256 shares, address receiver) external override whenNotPaused returns (uint256 assets) {
-        require(shares > 0, "PortusMax: zero mint");
+        require(shares > 0, "SolCross: zero mint");
         assets = convertToAssets(shares);
-        require(assets > 0, "PortusMax: zero assets needed");
+        require(assets > 0, "SolCross: zero assets needed");
 
-        require(underlyingAsset.transferFrom(msg.sender, address(this), assets), "PortusMax: transferFrom failed");
+        require(underlyingAsset.transferFrom(msg.sender, address(this), assets), "SolCross: transferFrom failed");
 
         _mint(receiver, shares);
         idleAssets += assets;
@@ -193,24 +188,21 @@ contract PortusMaxVault is IERC4626 {
 
     // --- Standard Dual-Lane Withdraw Entrypoints ---
 
-    /**
-     * @notice Convenient single-argument withdraw for dual-lane compatibility.
-     */
     function withdraw(uint256 assets) external returns (uint256 shares) {
         return withdraw(assets, msg.sender, msg.sender);
     }
 
     function withdraw(uint256 assets, address receiver, address ownerAccount) public override returns (uint256 shares) {
-        require(assets > 0, "PortusMax: zero withdraw");
-        require(receiver != address(0), "PortusMax: zero receiver");
+        require(assets > 0, "SolCross: zero withdraw");
+        require(receiver != address(0), "SolCross: zero receiver");
 
         shares = convertToShares(assets);
-        require(shares > 0, "PortusMax: zero shares");
+        require(shares > 0, "SolCross: zero shares");
 
         if (msg.sender != ownerAccount) {
             uint256 allowed = allowance[ownerAccount][msg.sender];
             if (allowed != type(uint256).max) {
-                require(allowed >= shares, "PortusMax: allowance exceeded");
+                require(allowed >= shares, "SolCross: allowance exceeded");
                 unchecked {
                     allowance[ownerAccount][msg.sender] = allowed - shares;
                 }
@@ -219,27 +211,26 @@ contract PortusMaxVault is IERC4626 {
 
         _burn(ownerAccount, shares);
 
-        // If idle assets are insufficient, perform atomic CPI unwind from Solana in this transaction!
         if (idleAssets < assets) {
             uint256 shortfall = assets - idleAssets;
             _unwindFromSolanaCPI(shortfall);
         }
 
         idleAssets -= assets;
-        require(underlyingAsset.transfer(receiver, assets), "PortusMax: transfer failed");
+        require(underlyingAsset.transfer(receiver, assets), "SolCross: transfer failed");
 
         emit Withdraw(msg.sender, receiver, ownerAccount, assets, shares);
     }
 
     function redeem(uint256 shares, address receiver, address ownerAccount) external override returns (uint256 assets) {
-        require(shares > 0, "PortusMax: zero shares");
+        require(shares > 0, "SolCross: zero shares");
         assets = convertToAssets(shares);
-        require(assets > 0, "PortusMax: zero assets");
+        require(assets > 0, "SolCross: zero assets");
 
         if (msg.sender != ownerAccount) {
             uint256 allowed = allowance[ownerAccount][msg.sender];
             if (allowed != type(uint256).max) {
-                require(allowed >= shares, "PortusMax: allowance exceeded");
+                require(allowed >= shares, "SolCross: allowance exceeded");
                 unchecked {
                     allowance[ownerAccount][msg.sender] = allowed - shares;
                 }
@@ -254,7 +245,7 @@ contract PortusMaxVault is IERC4626 {
         }
 
         idleAssets -= assets;
-        require(underlyingAsset.transfer(receiver, assets), "PortusMax: transfer failed");
+        require(underlyingAsset.transfer(receiver, assets), "SolCross: transfer failed");
 
         emit Withdraw(msg.sender, receiver, ownerAccount, assets, shares);
     }
@@ -263,10 +254,6 @@ contract PortusMaxVault is IERC4626 {
     //            ROME ATOMIC CPI STRATEGY & REBALANCING ENGINE
     // =========================================================================
 
-    /**
-     * @notice Performs cross-runtime rebalance between Rome EVM and Solana runtime.
-     * @dev Uses Rome precompiles (ICrossProgramInvocation) to atomically call Solana.
-     */
     function rebalance() external onlyManager {
         _executeRebalance();
     }
@@ -278,7 +265,6 @@ contract PortusMaxVault is IERC4626 {
         uint256 targetSolana = (total * targetSolanaAllocationBps) / BPS_DENOMINATOR;
         if (targetSolana > solanaAllocatedAssets) {
             uint256 diff = targetSolana - solanaAllocatedAssets;
-            // Only auto-rebalance if threshold is substantial (> 100 USDC to save gas)
             if (diff >= 100 * 1e6 && idleAssets >= diff) {
                 _deployToSolanaCPI(diff);
             }
@@ -305,31 +291,18 @@ contract PortusMaxVault is IERC4626 {
         }
     }
 
-    /**
-     * @notice Deploys capital from EVM vault into Solana DeFi pool via Rome Precompile.
-     */
     function _deployToSolanaCPI(uint256 amount) internal {
-        require(amount <= idleAssets, "PortusMax: insufficient idle assets");
+        require(amount <= idleAssets, "SolCross: insufficient idle assets");
 
-        // 1. If solanaProgramId is configured, execute real atomic CPI to Solana program
         if (solanaProgramId != bytes32(0)) {
-            // Build account metadata for Solana instruction
             ICrossProgramInvocation.AccountMeta[] memory accounts = new ICrossProgramInvocation.AccountMeta[](3);
-            
-            // Account 0: Contract's Solana PDA (funder/signer)
             bytes32 contractPda = HelperProgram.pda(address(this));
             accounts[0] = ICrossProgramInvocation.AccountMeta(contractPda, false, true);
-
-            // Account 1: Target Market / Lending Pool Account
             accounts[1] = ICrossProgramInvocation.AccountMeta(solanaMarketAccount, false, true);
-
-            // Account 2: Target Reserve Token Account
             accounts[2] = ICrossProgramInvocation.AccountMeta(solanaReserveAta, false, true);
 
-            // Encode instruction data: [discriminant (1 byte: deposit=0x01) + uint64 amount (8 bytes Little Endian)]
             bytes memory ixData = abi.encodePacked(uint8(1), _toLittleEndianU64(uint64(amount)));
 
-            // Precompile call: invoke_signed from contract's PDA
             bytes32[] memory seeds = new bytes32[](0);
             CpiProgram.invoke_signed(solanaProgramId, accounts, ixData, seeds);
         }
@@ -340,9 +313,6 @@ contract PortusMaxVault is IERC4626 {
         emit StrategyRebalanced(idleAssets, solanaAllocatedAssets, amount, true);
     }
 
-    /**
-     * @notice Unwinds capital from Solana DeFi pool back to EVM vault via Rome Precompile.
-     */
     function _unwindFromSolanaCPI(uint256 amount) internal {
         if (amount > solanaAllocatedAssets) {
             amount = solanaAllocatedAssets;
@@ -355,7 +325,6 @@ contract PortusMaxVault is IERC4626 {
             accounts[1] = ICrossProgramInvocation.AccountMeta(solanaMarketAccount, false, true);
             accounts[2] = ICrossProgramInvocation.AccountMeta(solanaReserveAta, false, true);
 
-            // Encode instruction data: [discriminant (1 byte: withdraw=0x02) + uint64 amount (8 bytes Little Endian)]
             bytes memory ixData = abi.encodePacked(uint8(2), _toLittleEndianU64(uint64(amount)));
 
             bytes32[] memory seeds = new bytes32[](0);
@@ -368,9 +337,6 @@ contract PortusMaxVault is IERC4626 {
         emit StrategyRebalanced(idleAssets, solanaAllocatedAssets, amount, false);
     }
 
-    /**
-     * @notice Harvests yield generated from Solana positions, augmenting totalAssets and share price.
-     */
     function harvestYield(uint256 earnedAmount) external onlyManager {
         require(earnedAmount > 0, "Zero yield");
         
@@ -410,9 +376,6 @@ contract PortusMaxVault is IERC4626 {
         paused = _paused;
     }
 
-    /**
-     * @notice Emergency circuit breaker: instantly recalls all Solana funds back to EVM vault.
-     */
     function emergencyRecall() external onlyOwner {
         paused = true;
         uint256 active = solanaAllocatedAssets;
@@ -441,7 +404,7 @@ contract PortusMaxVault is IERC4626 {
     }
 
     function _burn(address from, uint256 amount) internal {
-        require(balanceOf[from] >= amount, "PortusMax: burn exceeds balance");
+        require(balanceOf[from] >= amount, "SolCross: burn exceeds balance");
         balanceOf[from] -= amount;
         totalSupply -= amount;
         emit Transfer(from, address(0), amount);
@@ -452,7 +415,7 @@ contract PortusMaxVault is IERC4626 {
     // =========================================================================
 
     function transfer(address to, uint256 amount) external override returns (bool) {
-        require(balanceOf[msg.sender] >= amount, "PortusMax: transfer exceeds balance");
+        require(balanceOf[msg.sender] >= amount, "SolCross: transfer exceeds balance");
         balanceOf[msg.sender] -= amount;
         balanceOf[to] += amount;
         emit Transfer(msg.sender, to, amount);
@@ -468,12 +431,12 @@ contract PortusMaxVault is IERC4626 {
     function transferFrom(address from, address to, uint256 amount) external override returns (bool) {
         uint256 allowed = allowance[from][msg.sender];
         if (allowed != type(uint256).max) {
-            require(allowed >= amount, "PortusMax: allowance exceeded");
+            require(allowed >= amount, "SolCross: allowance exceeded");
             unchecked {
                 allowance[from][msg.sender] = allowed - amount;
             }
         }
-        require(balanceOf[from] >= amount, "PortusMax: transfer exceeds balance");
+        require(balanceOf[from] >= amount, "SolCross: transfer exceeds balance");
         balanceOf[from] -= amount;
         balanceOf[to] += amount;
         emit Transfer(from, to, amount);

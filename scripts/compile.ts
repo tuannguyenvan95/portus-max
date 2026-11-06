@@ -24,13 +24,13 @@ function findImports(path: string) {
 }
 
 export function compileVault() {
-  const vaultPath = resolve(root, "contracts/core/PortusMaxVault.sol");
+  const vaultPath = resolve(root, "contracts/core/SolCrossVault.sol");
   const source = readFileSync(vaultPath, "utf8");
 
   const input = {
     language: "Solidity",
     sources: {
-      "PortusMaxVault.sol": { content: source },
+      "SolCrossVault.sol": { content: source },
     },
     settings: {
       optimizer: {
@@ -45,7 +45,7 @@ export function compileVault() {
     },
   };
 
-  console.log("Compiling PortusMaxVault.sol with solc...");
+  console.log("Compiling SolCrossVault.sol with solc...");
   const output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
 
   if (output.errors) {
@@ -54,24 +54,20 @@ export function compileVault() {
       console.error("Solidity compilation errors:", JSON.stringify(errors, null, 2));
       throw new Error(`Solidity compilation failed with ${errors.length} errors`);
     }
-    const warnings = output.errors.filter((e: any) => e.severity === "warning");
-    if (warnings.length > 0) {
-      console.log(`Compilation succeeded with ${warnings.length} warnings.`);
-    }
   }
 
-  const contract = output.contracts["PortusMaxVault.sol"].PortusMaxVault;
+  const contract = output.contracts["SolCrossVault.sol"].SolCrossVault;
   const abi = contract.abi;
   const bytecode = `0x${contract.evm.bytecode.object}` as `0x${string}`;
 
   mkdirSync(resolve(root, "artifacts"), { recursive: true });
   writeFileSync(
-    resolve(root, "artifacts/PortusMaxVault.json"),
+    resolve(root, "artifacts/SolCrossVault.json"),
     JSON.stringify({ abi, bytecode }, null, 2),
     "utf8"
   );
 
-  console.log("Compilation successful! Artifact saved to artifacts/PortusMaxVault.json");
+  console.log("Compilation successful! Artifact saved to artifacts/SolCrossVault.json");
   return { abi, bytecode };
 }
 
