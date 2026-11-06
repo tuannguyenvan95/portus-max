@@ -3,6 +3,10 @@
 > **"A Real EVM inside Solana — EVM and Solana, one market."**  
 > Built for the **Rome Arena Builder Program** ([arena.mainnet.romeprotocol.xyz](https://arena.mainnet.romeprotocol.xyz/)).
 
+- 🌐 **Live Web Application (Vercel):** [https://frontend-lyart-eight-10.vercel.app](https://frontend-lyart-eight-10.vercel.app)
+- 🐙 **GitHub Repository:** [https://github.com/tuannguyenvan95/portus-max](https://github.com/tuannguyenvan95/portus-max)
+- 📜 **Rome Arena App Registration:** [https://arena.mainnet.romeprotocol.xyz/apps/new](https://arena.mainnet.romeprotocol.xyz/apps/new)
+
 ---
 
 ## 🌟 Executive Summary
