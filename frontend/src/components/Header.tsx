@@ -10,7 +10,8 @@ import {
   Droplets, 
   Copy, 
   HelpCircle,
-  BookOpen
+  BookOpen,
+  Rocket
 } from "lucide-react";
 import type { FrontendConfig } from "../lib/config";
 
@@ -31,6 +32,7 @@ interface HeaderProps {
   isRefreshing: boolean;
   onOpenAbout: () => void;
   onOpenFaucet: () => void;
+  onOpenDeploy: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -50,6 +52,7 @@ export const Header: React.FC<HeaderProps> = ({
   isRefreshing,
   onOpenAbout,
   onOpenFaucet,
+  onOpenDeploy,
 }) => {
   const [networkDropdownOpen, setNetworkDropdownOpen] = useState(false);
   const [copiedBadge, setCopiedBadge] = useState<string | null>(null);
@@ -163,6 +166,15 @@ export const Header: React.FC<HeaderProps> = ({
               Solana {config.solanaCluster} (~400ms)
             </span>
           </div>
+
+          {/* Deploy Personal Vault Button */}
+          <button
+            onClick={onOpenDeploy}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 hover:border-emerald-500/60 text-xs font-semibold text-emerald-300 hover:text-white transition-all shadow-solanaGlow"
+          >
+            <Rocket className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Deploy Vault</span>
+          </button>
 
           {/* About / Project Info Button */}
           <button

@@ -7,6 +7,7 @@ import { StrategyManagement } from "./components/StrategyManagement";
 import { ActivityFeed, type ActivityItem } from "./components/ActivityFeed";
 import { AboutModal } from "./components/AboutModal";
 import { FaucetModal } from "./components/FaucetModal";
+import { DeployModal } from "./components/DeployModal";
 import { getConfigForNetwork, type FrontendConfig } from "./lib/config";
 import {
   fetchSolanaOnChainData,
@@ -14,7 +15,7 @@ import {
   fetchVaultOnChainData,
 } from "./lib/onchain";
 import { connectEvmWallet, checkEagerEvmConnection } from "./lib/evmWallet";
-import { ArrowUpRight, Trophy, Sparkles, BookOpen, Droplets, ExternalLink, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, Trophy, Sparkles, BookOpen, Droplets, ExternalLink, ShieldCheck, Rocket } from "lucide-react";
 import type { Hex } from "viem";
 
 export const App: React.FC = () => {
@@ -31,6 +32,7 @@ export const App: React.FC = () => {
   // --- Modals ---
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isFaucetOpen, setIsFaucetOpen] = useState(false);
+  const [isDeployOpen, setIsDeployOpen] = useState(false);
 
   // --- Real On-Chain Balances (Zero Mock: start at 0.00) ---
   const [solBalance, setSolBalance] = useState<number>(0);
@@ -417,6 +419,7 @@ export const App: React.FC = () => {
         isRefreshing={isRefreshing}
         onOpenAbout={() => setIsAboutOpen(true)}
         onOpenFaucet={() => setIsFaucetOpen(true)}
+        onOpenDeploy={() => setIsDeployOpen(true)}
       />
 
       {/* Main Container */}
@@ -443,6 +446,14 @@ export const App: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+            <button
+              onClick={() => setIsDeployOpen(true)}
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 hover:opacity-90 shadow-solanaGlow transition-all"
+            >
+              <Rocket className="w-4 h-4" />
+              <span>Deploy My Vault</span>
+            </button>
+
             <button
               onClick={() => setIsAboutOpen(true)}
               className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-colors"
@@ -556,6 +567,18 @@ export const App: React.FC = () => {
         config={config}
         solanaAddress={solanaAddress}
         evmAddress={evmAddress}
+      />
+
+      <DeployModal
+        isOpen={isDeployOpen}
+        onClose={() => setIsDeployOpen(false)}
+        config={config}
+        evmAddress={evmAddress}
+        onConnectEvm={handleConnectEvm}
+        onDeployed={(newAddr) => {
+          setVaultAddress(newAddr);
+          refreshOnChainData();
+        }}
       />
     </div>
   );
