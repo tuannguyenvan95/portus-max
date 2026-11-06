@@ -347,6 +347,24 @@ contract SolCrossVault is IERC4626 {
         emit YieldHarvested(earnedAmount, totalAssets(), block.timestamp);
     }
 
+    event CrossActionExecuted(bytes32 indexed solanaProgram, address indexed caller, uint256 dataLength);
+
+    /**
+     * @notice Explicit atomic cross-runtime CPI action into any Solana program.
+     * @dev Adheres strictly to Rome Protocol CPI primitives: explicit account metadata, Borsh/LE data, depth <= 4.
+     */
+    function executeCrossAction(
+        bytes32 programId,
+        bytes32 targetAccount,
+        bytes calldata ixData
+    ) external onlyManager {
+        require(programId != bytes32(0), "Invalid program ID");
+        ICrossProgramInvocation.AccountMeta[] memory accounts = new ICrossProgramInvocation.AccountMeta[](1);
+        accounts[0] = ICrossProgramInvocation.AccountMeta(targetAccount, false, true);
+        CpiProgram.invoke(programId, accounts, ixData);
+        emit CrossActionExecuted(programId, msg.sender, ixData.length);
+    }
+
     // =========================================================================
     //                        ADMIN & CIRCUIT BREAKER
     // =========================================================================
