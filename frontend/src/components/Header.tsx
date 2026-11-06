@@ -91,9 +91,6 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="text-xl font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
                 SOL<span className="text-rome-solana font-extrabold">CROSS</span>
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-rome-solana/10 text-rome-solana border border-rome-solana/30">
-                100% On-Chain
-              </span>
             </div>
             <p className="text-xs text-rome-textDim hidden sm:block">
               Rome Protocol Yield Port · Atomic CPI Engine

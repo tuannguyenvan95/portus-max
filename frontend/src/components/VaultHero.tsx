@@ -47,7 +47,7 @@ export const VaultHero: React.FC<VaultHeroProps> = ({
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-400 mb-3 shadow-solanaGlow">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-            <span>SolCross Protocol · 100% On-Chain State Synchronized</span>
+            <span>SolCross Protocol · Atomic CPI Yield Port</span>
           </div>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
             SolCross Yield Port.{" "}
