@@ -133,7 +133,6 @@ export const App: React.FC = () => {
           setEvmAddress(accounts[0]);
           setActiveLane("evm");
 
-          // Try switching to Rome Hadrian if on testnet
           try {
             await (window as any).ethereum.request({
               method: "wallet_switchEthereumChain",
@@ -166,6 +165,16 @@ export const App: React.FC = () => {
     }
   };
 
+  // --- Disconnect EVM Wallet ---
+  const handleDisconnectEvm = () => {
+    setEvmAddress(null);
+    setEvmNativeBalance(0);
+    setEvmWusdcBalance(0);
+    if (activeLane === "evm") {
+      setUserShares(0);
+    }
+  };
+
   // --- Connect Real Solana (Phantom) ---
   const handleConnectSolana = async () => {
     if (typeof window !== "undefined" && (window as any).solana) {
@@ -186,6 +195,24 @@ export const App: React.FC = () => {
     }
   };
 
+  // --- Disconnect Solana Wallet ---
+  const handleDisconnectSolana = async () => {
+    if (typeof window !== "undefined" && (window as any).solana) {
+      try {
+        await (window as any).solana.disconnect();
+      } catch (e) {
+        // ignore
+      }
+    }
+    setSolanaAddress(null);
+    setSyntheticAddress(null);
+    setSolBalance(0);
+    setSplUsdcBalance(0);
+    if (activeLane === "solana") {
+      setUserShares(0);
+    }
+  };
+
   // --- Real Deposit Handler ---
   const handleDeposit = async (amount: number): Promise<string> => {
     let txHash = "";
@@ -194,12 +221,9 @@ export const App: React.FC = () => {
       if (!evmAddress || !(window as any).ethereum) {
         throw new Error("MetaMask is not connected");
       }
-      // Request transaction signature via MetaMask
       const eth = (window as any).ethereum;
       const amountUnits = BigInt(Math.floor(amount * 1e6));
-
-      // Call deposit on SolCrossVault
-      const depositCallData = `0xb6b55f25${amountUnits.toString(16).padStart(64, "0")}`; // function selector
+      const depositCallData = `0xb6b55f25${amountUnits.toString(16).padStart(64, "0")}`;
       txHash = await eth.request({
         method: "eth_sendTransaction",
         params: [
@@ -215,7 +239,6 @@ export const App: React.FC = () => {
         throw new Error("Phantom wallet is not connected");
       }
 
-      // Phantom wallet signs message or transaction
       const provider = (window as any).solana;
       const message = new TextEncoder().encode(
         `SolCross Yield Port: Authorize Deposit of ${amount} USDC on ${config.chainName}`
@@ -224,10 +247,8 @@ export const App: React.FC = () => {
       txHash = `0x${Array.from(signed.signature as Uint8Array).map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 64)}`;
     }
 
-    // Refresh real balances immediately after transaction
     await refreshOnChainData();
 
-    // Log to activity feed
     const newAct: ActivityItem = {
       id: Date.now().toString(),
       type: "deposit",
@@ -294,7 +315,7 @@ export const App: React.FC = () => {
         {
           from: evmAddress,
           to: vaultAddress,
-          data: "0x3e185077", // rebalance()
+          data: "0x3e185077",
         },
       ],
     });
@@ -313,7 +334,7 @@ export const App: React.FC = () => {
         {
           from: evmAddress,
           to: vaultAddress,
-          data: "0xb7976646", // emergencyRecall()
+          data: "0xb7976646",
         },
       ],
     });
@@ -334,7 +355,9 @@ export const App: React.FC = () => {
         syntheticAddress={syntheticAddress}
         activeLane={activeLane}
         onConnectEvm={handleConnectEvm}
+        onDisconnectEvm={handleDisconnectEvm}
         onConnectSolana={handleConnectSolana}
+        onDisconnectSolana={handleDisconnectSolana}
         onRefreshOnChain={refreshOnChainData}
         isRefreshing={isRefreshing}
       />
@@ -354,7 +377,7 @@ export const App: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-slate-300 mt-0.5">
-                Đăng ký ứng dụng trên Rome Arena để tích lũy Laurels và thăng hạng Legionary → Patrician → Pontifex Maximus.
+                Register this verified application on Rome Arena to accumulate Laurels and climb tiers (Legionary → Patrician → Pontifex Maximus).
               </p>
             </div>
           </div>
@@ -365,7 +388,7 @@ export const App: React.FC = () => {
             rel="noreferrer"
             className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:opacity-95 shadow-glow transition-all shrink-0"
           >
-            <span>Register SolCross on Arena</span>
+            <span>Register on Rome Arena</span>
             <ArrowUpRight className="w-4 h-4" />
           </a>
         </div>
@@ -425,7 +448,7 @@ export const App: React.FC = () => {
             <span>SolCross Yield Port</span>
             <span>· Built natively on</span>
             <span className="font-semibold text-white">Rome Protocol</span>
-            <span>· Verified on Solana L1</span>
+            <span>· Settled on Solana L1</span>
           </div>
           <div className="flex items-center gap-4">
             <a href="https://docs.rome.builders" target="_blank" rel="noreferrer" className="hover:text-slate-300">

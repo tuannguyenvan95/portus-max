@@ -131,7 +131,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 
           <div className="text-right">
             <div className="text-[11px] text-slate-400">
-              {mode === "deposit" ? "Spendable on-chain:" : "Redeemable shares:"}
+              {mode === "deposit" ? "Spendable Balance:" : "Redeemable Shares:"}
             </div>
             <div className="text-xs font-bold font-mono text-white">
               {maxAvailable.toFixed(2)} USDC
@@ -144,7 +144,7 @@ export const Terminal: React.FC<TerminalProps> = ({
           <div className="flex items-center justify-between text-xs text-slate-400">
             <span>{mode === "deposit" ? "Deposit Amount" : "Withdraw Amount"}</span>
             <span className="font-mono text-slate-300">
-              Lane: {activeLane === "evm" ? "MetaMask (EVM)" : "Phantom (Solana)"}
+              Active Lane: {activeLane === "evm" ? "MetaMask (EVM)" : "Phantom (Solana)"}
             </span>
           </div>
 
@@ -189,14 +189,14 @@ export const Terminal: React.FC<TerminalProps> = ({
           </div>
 
           <div className="flex items-center justify-between text-slate-400">
-            <span>Projected Annual Return ({currentApy.toFixed(2)}% APY):</span>
+            <span>Projected Annual Yield ({currentApy.toFixed(2)}% APY):</span>
             <span className="font-mono font-bold text-emerald-400">
               +${projectedYearlyYield.toFixed(2)} USDC / yr
             </span>
           </div>
 
           <div className="flex items-center justify-between text-slate-400">
-            <span>Settlement Runtime:</span>
+            <span>Execution Runtime:</span>
             <span className="font-mono text-rome-solana font-semibold">
               {config.chainName} · Solana L1 Atomic CPI
             </span>
@@ -207,11 +207,11 @@ export const Terminal: React.FC<TerminalProps> = ({
           <div className="mt-3 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[11px] text-blue-300 flex items-start gap-2">
             <HelpCircle className="w-4 h-4 shrink-0 mt-0.5 text-blue-400" />
             <div>
-              <span>Số dư USDC trên ví này hiện là 0.00. </span>
+              <span>Current on-chain USDC balance is 0.00. </span>
               {activeLane === "solana" ? (
-                <span>Hãy nhận devnet SOL/USDC hoặc đổi sang mạng Mainnet ở thanh trên cùng nếu tài sản của bạn nằm trên Mainnet.</span>
+                <span>If your assets reside on Solana Mainnet, switch the network selector at the top to Rubicon Mainnet, or fund with devnet SOL/USDC.</span>
               ) : (
-                <span>Hãy nạp testnet USDC lên Rome Hadrian để giao dịch on-chain.</span>
+                <span>Please fund your wallet with testnet USDC on Rome Hadrian to execute on-chain deposits.</span>
               )}
             </div>
           </div>
@@ -231,7 +231,7 @@ export const Terminal: React.FC<TerminalProps> = ({
           <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4" />
-              <span>Giao dịch On-chain đã xác nhận!</span>
+              <span>On-Chain Transaction Confirmed!</span>
             </div>
             <a
               href={`${config.explorerUrl}/tx/${lastTxHash}`}
@@ -239,7 +239,7 @@ export const Terminal: React.FC<TerminalProps> = ({
               rel="noreferrer"
               className="font-mono underline flex items-center gap-1 hover:text-white"
             >
-              <span>Xem Explorer</span>
+              <span>View Explorer</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
@@ -263,17 +263,17 @@ export const Terminal: React.FC<TerminalProps> = ({
           {status === "submitting" ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Xác thực giao dịch trên ví và Solana L1...</span>
+              <span>Broadcasting to Rome EVM & Solana L1...</span>
             </>
           ) : !isConnected ? (
-            <span>Kết nối ví để {mode === "deposit" ? "Nạp" : "Rút"}</span>
+            <span>Connect Wallet to {mode === "deposit" ? "Deposit" : "Withdraw"}</span>
           ) : mode === "deposit" ? (
             <>
               <Sparkles className="w-4 h-4 text-white" />
-              <span>Nạp & Triển khai vào Solana Yield (Atomic CPI)</span>
+              <span>Deposit & Deploy to Solana Yield (Atomic CPI)</span>
             </>
           ) : (
-            <span>Rút về ví on-chain</span>
+            <span>Withdraw to On-Chain Wallet</span>
           )}
         </button>
       </div>
