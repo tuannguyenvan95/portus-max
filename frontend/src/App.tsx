@@ -11,6 +11,7 @@ import {
   fetchEvmOnChainData,
   fetchVaultOnChainData,
 } from "./lib/onchain";
+import { connectEvmWallet } from "./lib/evmWallet";
 import { ArrowUpRight, Trophy } from "lucide-react";
 import type { Hex } from "viem";
 
@@ -121,47 +122,18 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // --- Connect Real EVM (MetaMask) ---
+  // --- Connect Real EVM (MetaMask / Rabby / Injected) ---
   const handleConnectEvm = async () => {
-    if (typeof window !== "undefined" && (window as any).ethereum) {
-      try {
-        setIsRefreshing(true);
-        const accounts = await (window as any).ethereum.request({
-          method: "eth_requestAccounts",
-        });
-        if (accounts && accounts[0]) {
-          setEvmAddress(accounts[0]);
-          setActiveLane("evm");
-
-          try {
-            await (window as any).ethereum.request({
-              method: "wallet_switchEthereumChain",
-              params: [{ chainId: `0x${config.chainId.toString(16)}` }],
-            });
-          } catch (switchError: any) {
-            if (switchError.code === 4902) {
-              await (window as any).ethereum.request({
-                method: "wallet_addEthereumChain",
-                params: [
-                  {
-                    chainId: `0x${config.chainId.toString(16)}`,
-                    chainName: config.chainName,
-                    rpcUrls: [config.rpcUrl],
-                    nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
-                    blockExplorerUrls: [config.explorerUrl],
-                  },
-                ],
-              });
-            }
-          }
-        }
-      } catch (err) {
-        console.error("MetaMask connection failed:", err);
-      } finally {
-        setIsRefreshing(false);
-      }
-    } else {
-      alert("Please install MetaMask to connect with the EVM lane.");
+    try {
+      setIsRefreshing(true);
+      const account = await connectEvmWallet(config);
+      setEvmAddress(account);
+      setActiveLane("evm");
+    } catch (err: any) {
+      console.error("MetaMask connection failed:", err);
+      alert(err.message || "Could not connect to EVM wallet.");
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -354,6 +326,7 @@ export const App: React.FC = () => {
         solanaAddress={solanaAddress}
         syntheticAddress={syntheticAddress}
         activeLane={activeLane}
+        onSwitchLane={setActiveLane}
         onConnectEvm={handleConnectEvm}
         onDisconnectEvm={handleDisconnectEvm}
         onConnectSolana={handleConnectSolana}

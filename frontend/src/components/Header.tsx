@@ -10,6 +10,7 @@ interface HeaderProps {
   solanaAddress: string | null;
   syntheticAddress: string | null;
   activeLane: "evm" | "solana";
+  onSwitchLane: (lane: "evm" | "solana") => void;
   onConnectEvm: () => void;
   onDisconnectEvm: () => void;
   onConnectSolana: () => void;
@@ -26,6 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
   solanaAddress,
   syntheticAddress,
   activeLane,
+  onSwitchLane,
   onConnectEvm,
   onDisconnectEvm,
   onConnectSolana,
@@ -151,13 +153,23 @@ export const Header: React.FC<HeaderProps> = ({
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-blue-400" : ""}`} />
           </button>
 
-          {/* EVM (MetaMask) Connector & Disconnect */}
+          {/* EVM (MetaMask / Injected) Connector & Disconnect */}
           {evmAddress ? (
-            <div className="flex items-center bg-rome-card border border-blue-500/40 rounded-xl overflow-hidden shadow-glow">
-              <div className="px-3 py-2 text-xs font-mono font-bold text-blue-400 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+            <div
+              className={`flex items-center rounded-xl overflow-hidden transition-all ${
+                activeLane === "evm"
+                  ? "bg-rome-card border-2 border-blue-500 shadow-glow"
+                  : "bg-rome-card border border-rome-border opacity-75 hover:opacity-100"
+              }`}
+            >
+              <button
+                onClick={() => onSwitchLane("evm")}
+                title="Active Lane: EVM (MetaMask). Click to select."
+                className="px-3 py-2 text-xs font-mono font-bold text-blue-400 flex items-center gap-1.5 hover:bg-blue-500/10 transition-colors"
+              >
+                <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
                 <span>{evmAddress.slice(0, 6)}...{evmAddress.slice(-4)}</span>
-              </div>
+              </button>
               <button
                 onClick={onDisconnectEvm}
                 title="Disconnect EVM Wallet"
@@ -171,17 +183,27 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onConnectEvm}
               className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:opacity-90 shadow-glow transition-all"
             >
-              MetaMask
+              Connect MetaMask
             </button>
           )}
 
           {/* Solana (Phantom) Connector & Disconnect */}
           {solanaAddress ? (
-            <div className="flex items-center bg-rome-card border border-purple-500/40 rounded-xl overflow-hidden shadow-solanaGlow">
-              <div className="px-3 py-2 text-xs font-mono font-bold text-purple-300 flex items-center gap-1.5">
-                <span className="text-rome-solana">◎</span>
+            <div
+              className={`flex items-center rounded-xl overflow-hidden transition-all ${
+                activeLane === "solana"
+                  ? "bg-rome-card border-2 border-purple-500 shadow-solanaGlow"
+                  : "bg-rome-card border border-rome-border opacity-75 hover:opacity-100"
+              }`}
+            >
+              <button
+                onClick={() => onSwitchLane("solana")}
+                title="Active Lane: Solana (Phantom). Click to select."
+                className="px-3 py-2 text-xs font-mono font-bold text-purple-300 flex items-center gap-1.5 hover:bg-purple-500/10 transition-colors"
+              >
+                <span className="text-rome-solana font-bold">◎</span>
                 <span>{solanaAddress.slice(0, 4)}...{solanaAddress.slice(-4)}</span>
-              </div>
+              </button>
               <button
                 onClick={onDisconnectSolana}
                 title="Disconnect Solana Wallet"
@@ -195,7 +217,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onConnectSolana}
               className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 to-indigo-700 text-white hover:opacity-90 shadow-solanaGlow transition-all"
             >
-              Phantom
+              Connect Phantom
             </button>
           )}
         </div>
