@@ -89,32 +89,33 @@ export const DeployModal: React.FC<DeployModalProps> = ({
       setTxHash(null);
       setDeployedContract(null);
 
-      // 1. Force explicit permission authorization in MetaMask
-      let activeAccount = evmAddress;
+      // 1. Force explicit account request in MetaMask
+      let activeAccount: string;
       try {
-        await provider.request({
-          method: "wallet_requestPermissions",
-          params: [{ eth_accounts: {} }],
-        });
-      } catch (permErr: any) {
-        if (permErr.code === -32002) {
-          throw new Error("MetaMask is already waiting for your approval. Please click the fox icon in your browser toolbar to approve.");
+        const accounts = (await provider.request({
+          method: "eth_requestAccounts",
+        })) as string[];
+        if (!accounts || accounts.length === 0) {
+          throw new Error("No authorized EVM account found. Please open MetaMask and select an account.");
         }
-        if (permErr.code === 4001) {
-          throw new Error("Connection was cancelled in MetaMask. Please approve the connection to deploy.");
-        }
-      }
-
-      // 2. Fetch the active authorized account
-      const accounts = await provider.request({ method: "eth_accounts" });
-      if (accounts && accounts.length > 0) {
         activeAccount = accounts[0];
-      } else {
-        const reqAccounts = await provider.request({ method: "eth_requestAccounts" });
-        if (reqAccounts && reqAccounts.length > 0) {
-          activeAccount = reqAccounts[0];
-        } else {
-          throw new Error("No authorized EVM account found. Please open MetaMask and authorize this site.");
+      } catch (reqErr: any) {
+        if (reqErr.code === 4001) {
+          throw new Error("Connection was cancelled in MetaMask. Please click 'Deploy via MetaMask' and approve in the extension.");
+        }
+        if (reqErr.code === -32002) {
+          throw new Error("MetaMask is already waiting for your approval! Click the Fox icon (🦊) in your browser toolbar.");
+        }
+        // Fallback to wallet_requestPermissions
+        try {
+          const perms = await provider.request({
+            method: "wallet_requestPermissions",
+            params: [{ eth_accounts: {} }],
+          });
+          const accts = await provider.request({ method: "eth_accounts" });
+          activeAccount = accts[0];
+        } catch (pErr: any) {
+          throw new Error(reqErr.message || "Could not connect to MetaMask.");
         }
       }
 
