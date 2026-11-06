@@ -363,21 +363,33 @@ export const App: React.FC = () => {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Arena Callout Banner */}
+        {/* Arena Callout Banner & Official Idea Mapping */}
         <div className="bg-gradient-to-r from-blue-900/30 via-indigo-900/20 to-purple-900/30 border border-blue-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
               <Trophy className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-white">SolCross on Rome Arena</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                  Ready to Register
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-bold text-white">Rome Arena Build Track</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                  Category: Assets & Users Across Chains
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  Official Idea: Cross-Runtime Atomic Yield Port
                 </span>
               </div>
-              <p className="text-xs text-slate-300 mt-0.5">
-                Register this verified application on Rome Arena to accumulate Laurels and climb tiers (Legionary → Patrician → Pontifex Maximus).
+              <p className="text-xs text-slate-300 mt-1">
+                Mapped to the official Rome Arena Idea Catalogue (
+                <a
+                  href="https://arena.mainnet.romeprotocol.xyz/ideas"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-blue-400 underline hover:text-white"
+                >
+                  arena.mainnet.romeprotocol.xyz/ideas
+                </a>
+                ). Earn Laurels across TVL, Active Users, and Atomic CPI transactions.
               </p>
             </div>
           </div>
@@ -388,7 +400,7 @@ export const App: React.FC = () => {
             rel="noreferrer"
             className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:opacity-95 shadow-glow transition-all shrink-0"
           >
-            <span>Register on Rome Arena</span>
+            <span>Register in Arena</span>
             <ArrowUpRight className="w-4 h-4" />
           </a>
         </div>
