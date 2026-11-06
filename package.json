@@ -1,0 +1,24 @@
+{
+  "name": "portus-max",
+  "version": "1.0.0",
+  "description": "PortusMax - Institutional-Grade Dual-Lane Yield Port on Rome EVM",
+  "type": "module",
+  "scripts": {
+    "compile": "tsx scripts/compile.ts",
+    "deploy": "tsx scripts/deploy.ts",
+    "rebalance": "tsx scripts/rebalance.ts",
+    "demo": "tsx scripts/demo.ts"
+  },
+  "dependencies": {
+    "@rome-protocol/registry": "github:rome-protocol/rome-registry#v0.3.0",
+    "@rome-protocol/sdk": "github:rome-protocol/rome-sdk-ts#v0.4.0",
+    "@solana/spl-token": "^0.4.9",
+    "@solana/web3.js": "^1.95.8",
+    "@wallet-standard/app": "~1.1.0",
+    "dotenv": "^16.4.7",
+    "solc": "^0.8.26",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "viem": "^2.21.57"
+  }
+}

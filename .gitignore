@@ -1,0 +1,6 @@
+node_modules
+dist
+.env
+deployed-address.json
+.DS_Store
+*.log
