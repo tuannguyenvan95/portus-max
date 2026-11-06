@@ -89,21 +89,33 @@ export const DeployModal: React.FC<DeployModalProps> = ({
       setTxHash(null);
       setDeployedContract(null);
 
-      // 1. Ensure the EVM account is explicitly requested on this specific provider
+      // 1. Force explicit permission authorization in MetaMask
       let activeAccount = evmAddress;
       try {
-        const accounts = await provider.request({ method: "eth_requestAccounts" });
-        if (accounts && accounts.length > 0) {
-          activeAccount = accounts[0];
+        await provider.request({
+          method: "wallet_requestPermissions",
+          params: [{ eth_accounts: {} }],
+        });
+      } catch (permErr: any) {
+        if (permErr.code === -32002) {
+          throw new Error("MetaMask is already waiting for your approval. Please click the fox icon in your browser toolbar to approve.");
         }
-      } catch (authErr: any) {
-        if (authErr.code === -32002) {
-          throw new Error("Connection request already pending in your wallet extension. Please open MetaMask to approve.");
+        if (permErr.code === 4001) {
+          throw new Error("Connection was cancelled in MetaMask. Please approve the connection to deploy.");
         }
       }
 
-      if (!activeAccount) {
-        throw new Error("No authorized EVM account found. Please connect MetaMask.");
+      // 2. Fetch the active authorized account
+      const accounts = await provider.request({ method: "eth_accounts" });
+      if (accounts && accounts.length > 0) {
+        activeAccount = accounts[0];
+      } else {
+        const reqAccounts = await provider.request({ method: "eth_requestAccounts" });
+        if (reqAccounts && reqAccounts.length > 0) {
+          activeAccount = reqAccounts[0];
+        } else {
+          throw new Error("No authorized EVM account found. Please open MetaMask and authorize this site.");
+        }
       }
 
       // 2. Ensure chain is switched to Rome Hadrian
@@ -194,7 +206,7 @@ export const DeployModal: React.FC<DeployModalProps> = ({
       setStatus("error");
       if (err?.message?.includes("not been authorized") || err?.code === 4100) {
         setErrorMessage(
-          "Phantom Wallet is currently set as the default EVM provider in your browser and blocking custom Rome chains. To fix: Open Phantom Extension -> Settings (Gear icon ⚙️) -> Developer Settings -> Default Ethereum App -> Turn OFF (or select MetaMask), then refresh and click Deploy again."
+          "MetaMask account is not yet connected/authorized for this domain. To fix in 5 seconds: Open your MetaMask extension icon in browser toolbar ➔ Click the 3 dots (⋮) at top right of MetaMask ➔ 'Connected sites' ➔ Click 'Manually connect to current site' ➔ Click 'Connect', then click Deploy again."
         );
       } else {
         setErrorMessage(err.message || "Failed to deploy contract via MetaMask.");
